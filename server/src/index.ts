@@ -2,7 +2,7 @@ import express from "express";
 import { WebSocketServer, WebSocket } from "ws";
 import { RoomManager } from "./room/roomManager";
 import { User } from "./user/user";
-import { RecievedMessageType } from "./store/types";
+import { RecievedMessageType, SendingMessageType } from "./store/types";
 const PORT = process.env.PORT || 5000;
 const app = express();
 
@@ -26,13 +26,45 @@ WSS.on("connection", (socket) => {
   socket.on("message", (data, isBinary) => {
     try {
       const msg = JSON.parse(data.toString());
-      if (!msg.type || !msg.name) {
+      if (!msg.type || !msg.name || !msg.id) {
         socket.send(JSON.stringify({ error: "SUS!!" }));
         socket.close();
       }
       switch (msg.type) {
         case RecievedMessageType.NEW_GAME: {
-          const user = roomManager.findUser(msg.id, msg.name, socket);
+          const user: User = roomManager.findUser(msg.id, msg.name, socket);
+          roomManager.handleUser(user);
+          break;
+        }
+        case RecievedMessageType.JOIN_PENDING_GAME: {
+          const user: User = roomManager.findUser(msg.id, msg.name, socket);
+          roomManager.handleUser(user);
+          break;
+        }
+        case RecievedMessageType.NEXT_MOVE: {
+          const status = roomManager.handleMove(
+            msg.color,
+            msg.id,
+            msg.from,
+            msg.to
+          );
+          if (status) {
+            socket.send(
+              JSON.stringify({
+                status: SendingMessageType.VALID_MOVE,
+                from: msg.from,
+                to: msg.to,
+              })
+            );
+          } else {
+            socket.send(
+              JSON.stringify({
+                status: SendingMessageType.INVALID_MOVE,
+                from: msg.from,
+                to: msg.to,
+              })
+            );
+          }
         }
       }
     } catch (e) {

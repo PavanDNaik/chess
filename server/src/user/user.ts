@@ -9,6 +9,8 @@ export interface User {
 
 export interface Pair {
   isReady: boolean;
+  black_id: null | number;
+  white_id: null | number;
   Black: User | null;
   White: User | null;
 }

@@ -2,10 +2,16 @@ import { SendingMessage, SendingMessageType } from "../store/types";
 import { Pair, User } from "../user/user";
 import { PIECE_TYPE, Square } from "./board";
 
+export enum GAME_STATUS {
+  RUNNING,
+  ENDED,
+  WAITING_FOR_DISCONNECTED,
+}
+
 export interface RoomType {
   id: number;
   players: Pair;
-  isWaiting: boolean; // only 1 player is present
+  status: GAME_STATUS; // only 1 player is present
   turn: boolean; // black or white
   board: Square[][];
 }
@@ -16,6 +22,7 @@ export class Room implements RoomType {
   isWaiting: boolean;
   turn: boolean;
   board: Square[][];
+  status: GAME_STATUS;
 
   constructor(user1: User, user2: User, id: number) {
     this.id = id;
@@ -23,6 +30,7 @@ export class Room implements RoomType {
     this.isWaiting = false;
     this.turn = true;
     this.board = this.prepareBoard();
+    this.status = GAME_STATUS.RUNNING;
     this.addCloseListeners(user1, true);
     this.addCloseListeners(user2, false);
   }
@@ -38,7 +46,9 @@ export class Room implements RoomType {
   private removePlayer(color: boolean) {
     if (color) {
       this.players.White = null;
+      this.status = GAME_STATUS.WAITING_FOR_DISCONNECTED;
     } else {
+      this.status = GAME_STATUS.WAITING_FOR_DISCONNECTED;
       this.players.Black = null;
     }
   }
@@ -46,6 +56,8 @@ export class Room implements RoomType {
   private getPiar(user1: User, user2: User): Pair {
     return {
       isReady: true,
+      white_id: user1.id,
+      black_id: user2.id,
       White: user1,
       Black: user2,
     };
@@ -64,6 +76,7 @@ export class Room implements RoomType {
           color: Toggle,
           pieceType: PIECE_TYPE.emptySquare,
         });
+        Toggle = !Toggle;
       }
     }
 
@@ -102,7 +115,7 @@ export class Room implements RoomType {
     board[7][4].pieceType = PIECE_TYPE.bKing;
   }
 
-  public sendBoards() {
+  public prepareBoardMessage(color: boolean) {
     let msg: SendingMessage = {
       Type: SendingMessageType.FOUND_ROOM,
       RoomID: this.id,
@@ -110,16 +123,48 @@ export class Room implements RoomType {
         board: this.board,
       },
     };
+    return { ...msg, color };
+  }
+
+  public sendBoardToBlack() {
     if (this.players.Black) {
-      this.players.Black.socket.send(JSON.stringify({ ...msg, color: false }));
+      this.players.Black.socket.send(
+        JSON.stringify(this.prepareBoardMessage(false))
+      );
     }
+  }
+
+  public sendBoardToWhite() {
     if (this.players.White) {
-      this.players.White.socket.send(JSON.stringify({ ...msg, color: true }));
+      this.players.White.socket.send(
+        JSON.stringify(this.prepareBoardMessage(true))
+      );
+    }
+  }
+
+  public addUser(user: User) {
+    if (this.players.black_id == user.id) {
+      this.players.Black = user;
+    }
+    if (this.players.white_id == user.id) {
+      this.players.White = user;
     }
   }
 
   public switchTurn() {
     this.turn = !this.turn;
-    // send request
+    if (this.turn) {
+      this.players.White?.socket.send(
+        JSON.stringify({ status: SendingMessageType.MOVE_EXPECTED })
+      );
+    } else {
+      this.players.Black?.socket.send(
+        JSON.stringify({ status: SendingMessageType.MOVE_EXPECTED })
+      );
+    }
+  }
+
+  public checkForMate(color: boolean) {
+    return false;
   }
 }
