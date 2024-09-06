@@ -1,3 +1,4 @@
+import { SendingMessage, SendingMessageType } from "../store/types";
 import { Pair, User } from "../user/user";
 import { PIECE_TYPE, Square } from "./board";
 
@@ -16,26 +17,38 @@ export class Room implements RoomType {
   turn: boolean;
   board: Square[][];
 
-  constructor(user: User, id: number, Color: boolean) {
+  constructor(user1: User, user2: User, id: number) {
     this.id = id;
-    this.players = this.getPiar(user, Color);
-    this.isWaiting = true;
+    this.players = this.getPiar(user1, user2);
+    this.isWaiting = false;
     this.turn = true;
     this.board = this.prepareBoard();
+    this.addCloseListeners(user1, true);
+    this.addCloseListeners(user2, false);
   }
 
-  private getPiar(User: User, Color: boolean): Pair {
-    if (Color) {
-      return {
-        isReady: false,
-        White: User,
-      };
+  private addCloseListeners(user: User, color: boolean) {
+    const socket = user.socket;
+    socket.onclose = () => {
+      this.isWaiting = true;
+      this.removePlayer(color);
+    };
+  }
+
+  private removePlayer(color: boolean) {
+    if (color) {
+      this.players.White = null;
     } else {
-      return {
-        isReady: false,
-        Black: User,
-      };
+      this.players.Black = null;
     }
+  }
+
+  private getPiar(user1: User, user2: User): Pair {
+    return {
+      isReady: true,
+      White: user1,
+      Black: user2,
+    };
   }
 
   private prepareBoard() {
@@ -89,14 +102,19 @@ export class Room implements RoomType {
     board[7][4].pieceType = PIECE_TYPE.bKing;
   }
 
-  public addSecondPlayer(User: User, Color: boolean) {
-    if (this.isWaiting) {
-      this.isWaiting = false;
-      if (Color) {
-        this.players.White = User;
-      } else {
-        this.players.Black = User;
-      }
+  public sendBoards() {
+    let msg: SendingMessage = {
+      Type: SendingMessageType.FOUND_ROOM,
+      RoomID: this.id,
+      PayLoad: {
+        board: this.board,
+      },
+    };
+    if (this.players.Black) {
+      this.players.Black.socket.send(JSON.stringify({ ...msg, color: false }));
+    }
+    if (this.players.White) {
+      this.players.White.socket.send(JSON.stringify({ ...msg, color: true }));
     }
   }
 

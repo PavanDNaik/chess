@@ -9,6 +9,6 @@ export interface User {
 
 export interface Pair {
   isReady: boolean;
-  Black?: User;
-  White?: User;
+  Black: User | null;
+  White: User | null;
 }
