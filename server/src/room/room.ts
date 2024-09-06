@@ -3,7 +3,7 @@ import { Pair, User } from "../user/user";
 import { PIECE_TYPE, Square } from "./board";
 
 export enum GAME_STATUS {
-  RUNNING,
+  RUNNING = 500,
   ENDED,
   WAITING_FOR_DISCONNECTED,
 }
@@ -78,6 +78,7 @@ export class Room implements RoomType {
         });
         Toggle = !Toggle;
       }
+      board.push(row);
     }
 
     this.getInitPieceype(board);

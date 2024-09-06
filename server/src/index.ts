@@ -25,6 +25,7 @@ WSS.on("connection", (socket) => {
 
   socket.on("message", (data, isBinary) => {
     try {
+      // console.log(data.toString());
       const msg = JSON.parse(data.toString());
       if (!msg.type || !msg.name || !msg.id) {
         socket.send(JSON.stringify({ error: "SUS!!" }));
@@ -68,9 +69,10 @@ WSS.on("connection", (socket) => {
         }
       }
     } catch (e) {
+      console.log(e);
       WSS.clients.forEach((client) => {
         if (client == socket) {
-          client.send(JSON.stringify({ error: "SUS!!" }));
+          client.send(JSON.stringify({ error: "Something went wrong!!" }));
         }
       });
     }

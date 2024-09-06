@@ -1,5 +1,5 @@
 export enum RecievedMessageType {
-  JOIN_PENDING_GAME,
+  JOIN_PENDING_GAME = 200,
   START_GAME,
   OFFER_DRAW,
   RESIGN,
@@ -10,7 +10,7 @@ export enum RecievedMessageType {
 }
 
 export enum SendingMessageType {
-  WIN,
+  WIN = 100,
   LOSE,
   OPPONENT_RESIGN,
   FOUND_ROOM,
