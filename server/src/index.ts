@@ -27,18 +27,26 @@ WSS.on("connection", (socket) => {
     try {
       // console.log(data.toString());
       const msg = JSON.parse(data.toString());
-      if (!msg.type || !msg.name || !msg.id) {
+      if (!msg.Type) {
         socket.send(JSON.stringify({ error: "SUS!!" }));
         socket.close();
       }
-      switch (msg.type) {
+      switch (msg.Type) {
         case RecievedMessageType.NEW_GAME: {
-          const user: User = roomManager.findUser(msg.id, msg.name, socket);
+          const user: User = roomManager.findUser(
+            msg.PayLoad.id,
+            msg.PayLoad.name,
+            socket
+          );
           roomManager.handleUser(user);
           break;
         }
         case RecievedMessageType.JOIN_PENDING_GAME: {
-          const user: User = roomManager.findUser(msg.id, msg.name, socket);
+          const user: User = roomManager.findUser(
+            msg.PayLoad.id,
+            msg.PayLoad.name,
+            socket
+          );
           roomManager.handleUser(user);
           break;
         }

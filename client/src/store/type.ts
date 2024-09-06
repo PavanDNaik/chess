@@ -1,15 +1,4 @@
 export enum RecievedMessageType {
-  JOIN_PENDING_GAME = 200,
-  START_GAME,
-  OFFER_DRAW,
-  RESIGN,
-  NEW_GAME,
-  NEXT_MOVE,
-  GET_BOARD_STATUS,
-  GET_GAME_STATUS,
-}
-
-export enum SendingMessageType {
   WIN = 100,
   LOSE,
   OPPONENT_RESIGN,
@@ -22,21 +11,32 @@ export enum SendingMessageType {
   INVALID_MOVE,
   VALID_MOVE,
 }
+//RecievedMessageType
+export enum SendingMessageType {
+  JOIN_PENDING_GAME = 200,
+  START_GAME,
+  OFFER_DRAW,
+  RESIGN,
+  NEW_GAME,
+  NEXT_MOVE,
+  GET_BOARD_STATUS,
+  GET_GAME_STATUS,
+}
 
 export type RecievedMessage = {
-  Type: RecievedMessageType;
+  status: RecievedMessageType;
   RoomID: number | "WAITING";
-  PayLoad?: any;
   from?: Position;
   to?: Position;
+  PayLoad?: any;
 };
 
 export type SendingMessage = {
-  status: SendingMessageType;
+  Type: SendingMessageType;
   RoomID: number | "WAITING";
-  PayLoad?: any;
   from?: Position;
   to?: Position;
+  PayLoad?: any;
 };
 
 export type Position = {

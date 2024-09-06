@@ -1,4 +1,4 @@
-import { getMaxListeners, WebSocket } from "ws";
+import { WebSocket } from "ws";
 import { User } from "../user/user";
 import { GAME_STATUS, Room } from "./room";
 import { Position, SendingMessageType } from "../store/types";
