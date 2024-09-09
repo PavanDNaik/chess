@@ -1,14 +1,18 @@
 import express from "express";
-import { WebSocketServer, WebSocket } from "ws";
+import { WebSocketServer } from "ws";
 import { RoomManager } from "./room/roomManager";
 import { User } from "./user/user";
 import { RecievedMessageType, SendingMessageType } from "./store/types";
+import userRouter from "./router/UserRouter";
+
 const PORT = process.env.PORT || 5000;
 const app = express();
 
 app.get("/", (req, res) => {
   res.send("Hii");
 });
+
+app.use("/user", userRouter);
 
 const server = app.listen(PORT, () => {
   console.log(`Listening on PORT : ${PORT}`);
