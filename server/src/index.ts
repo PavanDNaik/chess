@@ -4,10 +4,11 @@ import { RoomManager } from "./room/roomManager";
 import { User } from "./user/user";
 import { RecievedMessageType, SendingMessageType } from "./store/types";
 import userRouter from "./router/UserRouter";
-
+import cors from "cors";
 const PORT = process.env.PORT || 5000;
 const app = express();
-
+app.use(express.json());
+app.use(cors());
 app.get("/", (req, res) => {
   res.send("Hii");
 });

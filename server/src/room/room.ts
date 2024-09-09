@@ -118,7 +118,7 @@ export class Room implements RoomType {
 
   public prepareBoardMessage(color: boolean) {
     let msg: SendingMessage = {
-      Type: SendingMessageType.FOUND_ROOM,
+      status: SendingMessageType.FOUND_ROOM,
       RoomID: this.id,
       PayLoad: {
         board: this.board,
