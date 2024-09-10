@@ -1,0 +1,22 @@
+.board-container{
+    width: 800px;
+    height: 800px;
+}
+
+.Square{
+    width: 100px;
+    height: 100px;
+    border: 1px solid black;
+}
+
+.WhiteSquare{
+    background-color: white;
+}
+
+.BlackSquare{
+    background-color: black;
+}
+
+.board-row{
+    display: flex;
+}

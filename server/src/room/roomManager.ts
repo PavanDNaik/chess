@@ -26,6 +26,8 @@ export class RoomManager implements RoomManagerType {
     const room = new Room(firstUser, secondUser, ++this.roomCount);
     this.userIdToRoom.set(firstUser.id, room);
     this.userIdToRoom.set(secondUser.id, room);
+    // console.log(firstUser.name);
+    // console.log(secondUser.name);
     room.sendBoardToWhite();
     room.sendBoardToBlack();
   }
@@ -60,6 +62,8 @@ export class RoomManager implements RoomManagerType {
     }
     const waitingRandomUser = this.waitingUsers.pop();
     if (waitingRandomUser) {
+      // console.log(waitingRandomUser);
+      // console.log(user);
       if (Math.random() > 0.5) {
         this.createRoom(user, waitingRandomUser);
       } else {

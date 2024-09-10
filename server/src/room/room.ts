@@ -78,6 +78,7 @@ export class Room implements RoomType {
         });
         Toggle = !Toggle;
       }
+      Toggle = !Toggle;
       board.push(row);
     }
 
