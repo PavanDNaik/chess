@@ -6,12 +6,14 @@ import {
   SendingMessageType,
 } from "../store/type";
 import { useNavigate } from "react-router-dom";
-import { Square } from "../store/board";
+import { PIECE_TYPE, Square } from "../store/board";
+import "../css/board.css";
+
 export type User = {
   name: string;
   id: number;
 };
-import "../css/board.css";
+
 function Game() {
   const [socket, setSocket] = useState<null | WebSocket>(null);
   const [waiting, setWaiting] = useState(true);
@@ -62,6 +64,7 @@ function Game() {
       switch (msg.status) {
         case RecievedMessageType.FOUND_ROOM: {
           setBoard(msg.PayLoad.board);
+          setRoomId(msg.RoomID);
           setWaiting(false);
         }
       }
@@ -101,9 +104,20 @@ function Game() {
                     <div
                       key={i * 8 + j}
                       className={
-                        "Square " + (cell.color ? "WhiteSquare" : "BlackSquare")
+                        "Square " +
+                        (cell.color ? "WhiteSquare " : "BlackSquare ") +
+                        (cell.pieceType != PIECE_TYPE.emptySquare
+                          ? "piece-cell"
+                          : "")
                       }
-                    ></div>
+                    >
+                      {cell.pieceType != PIECE_TYPE.emptySquare && (
+                        <img
+                          className="piece-img"
+                          src={"./pieces/" + cell.pieceType + ".png"}
+                        />
+                      )}
+                    </div>
                   );
                 })}
               </div>
