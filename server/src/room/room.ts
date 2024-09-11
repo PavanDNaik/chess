@@ -123,9 +123,10 @@ export class Room implements RoomType {
       RoomID: this.id,
       PayLoad: {
         board: this.board,
+        color,
       },
     };
-    return { ...msg, color };
+    return { ...msg };
   }
 
   public sendBoardToBlack() {
