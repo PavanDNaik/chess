@@ -5,47 +5,26 @@ import {
   SendingMessage,
   SendingMessageType,
 } from "../store/type";
-import { useNavigate } from "react-router-dom";
 import { PIECE_TYPE, Square } from "../store/board";
 import "../css/board.css";
 import { Validator } from "../handler/validator";
 import { MoveHandler } from "../handler/moveHandler";
-
-export type User = {
-  name: string;
-  id: number;
-};
+import { useRecoilState } from "recoil";
+import { UserAtom } from "../recoil/atoms/user";
+import { useNavigate } from "react-router-dom";
 
 function Game() {
+  const [user] = useRecoilState(UserAtom);
+
+  console.log(user);
   const [socket, setSocket] = useState<null | WebSocket>(null);
   const [waiting, setWaiting] = useState(true);
   const [board, setBoard] = useState<null | Square[][]>(null);
   const [roomId, setRoomId] = useState<number | "WAITING">("WAITING");
   const [color, setColor] = useState<boolean | null>(null);
   const [from, setfrom] = useState<null | Square>(null);
-
-  const navigate = useNavigate();
   const validate = new Validator();
-  const moveHandler = new MoveHandler();
-  const [data, setData] = useState<{
-    name: string;
-    email: string;
-    id: number;
-  } | null>(null);
-
-  function getUserDetails() {
-    const localData = localStorage.getItem("user");
-    if (localData) {
-      const dataJSON = JSON.parse(localData);
-      if (dataJSON.name && dataJSON.email && dataJSON.id) {
-        setData(dataJSON);
-      } else {
-        navigate("/login");
-      }
-    } else {
-      navigate("/login");
-    }
-  }
+  const moveHandler = new MoveHandler(user?.id || 0);
 
   function connectToSocket() {
     const connection = new WebSocket("ws://localhost:5000");
@@ -59,13 +38,26 @@ function Game() {
     return connection;
   }
 
+  function swap(board: Square[][]) {
+    for (let i = 0; i < 4; i++) {
+      let temp = board[i];
+      board[i] = board[7 - i];
+      board[7 - i] = temp;
+    }
+    return board;
+  }
+
   function handleMessage(e: { data: string }) {
     const msgString: string = e.data;
     const msg: RecievedMessage = JSON.parse(msgString);
     console.log(msg.status == RecievedMessageType.FOUND_ROOM);
     switch (msg.status) {
       case RecievedMessageType.FOUND_ROOM: {
-        setBoard(msg.PayLoad.board);
+        if (msg.PayLoad.color === false) {
+          setBoard(swap(msg.PayLoad.board));
+        } else {
+          setBoard(msg.PayLoad.board);
+        }
         setRoomId(msg.RoomID);
         setColor(msg.PayLoad.color);
         setWaiting(false);
@@ -84,9 +76,11 @@ function Game() {
       setfrom(to);
       return;
     }
-    if (to == from) return;
-    if (from && validate.validateMove(from, to)) {
-      moveHandler.handleMove(socket, from, to);
+    if (
+      from &&
+      validate.validateMove(from, to) &&
+      moveHandler.handleMove(socket, from, to, roomId)
+    ) {
       board[to.x][to.y].pieceType = from.pieceType;
       board[from.x][from.y].pieceType = PIECE_TYPE.emptySquare;
       setBoard([...board]);
@@ -95,7 +89,10 @@ function Game() {
   }
 
   useEffect(() => {
-    getUserDetails();
+    if (!user) {
+      const navigate = useNavigate();
+      navigate("/login");
+    }
     const connection = connectToSocket();
     return () => {
       connection.close();
@@ -103,16 +100,16 @@ function Game() {
   }, []);
 
   useEffect(() => {
-    console.log(data);
-    if (socket && data) {
+    if (socket) {
       const msg: SendingMessage = {
         Type: SendingMessageType.NEW_GAME,
         RoomID: "WAITING",
-        PayLoad: data,
+        PayLoad: user,
+        id: user?.id || 0,
       };
       socket.send(JSON.stringify(msg));
     }
-  }, [socket, data]);
+  }, [socket, user]);
   if (!socket) {
     return <div>connecting to server...</div>;
   }

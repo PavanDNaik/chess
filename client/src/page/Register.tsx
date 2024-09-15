@@ -1,6 +1,8 @@
 import axios from "axios";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { UserAtom } from "../recoil/atoms/user";
+import { useRecoilState } from "recoil";
 
 function Register() {
   const [data, setData] = useState<{ name: String; email: String }>({
@@ -9,10 +11,12 @@ function Register() {
   });
 
   const navigate = useNavigate();
+  const [_, setUser] = useRecoilState(UserAtom);
+
   async function handleSubmit() {
     const resp = await axios.post("http://localhost:5000/user/signUp", data);
     if (resp.data.success) {
-      localStorage.setItem("user", JSON.stringify(resp.data.user));
+      setUser(resp.data.user);
       navigate("/home");
     } else {
       alert(resp.data.error);

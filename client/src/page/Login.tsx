@@ -1,18 +1,20 @@
 import axios from "axios";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useRecoilState } from "recoil";
+import { UserAtom } from "../recoil/atoms/user";
 
 function Login() {
   const [data, setData] = useState<{ name: String; email: String }>({
     name: "",
     email: "",
   });
-
+  const [_, setUser] = useRecoilState(UserAtom);
   const navigate = useNavigate();
   async function handleSubmit() {
     const resp = await axios.post("http://localhost:5000/user/signIn", data);
     if (resp.data.success) {
-      localStorage.setItem("user", JSON.stringify(resp.data.user));
+      setUser(resp.data.user);
       navigate("/home");
     } else {
       alert(resp.data.error);

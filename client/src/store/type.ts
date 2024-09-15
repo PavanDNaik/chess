@@ -1,3 +1,5 @@
+import { Square } from "./board";
+
 export enum RecievedMessageType {
   WIN = 100,
   LOSE,
@@ -34,8 +36,9 @@ export type RecievedMessage = {
 export type SendingMessage = {
   Type: SendingMessageType;
   RoomID: number | "WAITING";
-  from?: Position;
-  to?: Position;
+  id: number;
+  from?: Square;
+  to?: Square;
   PayLoad?: any;
 };
 
