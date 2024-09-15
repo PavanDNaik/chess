@@ -16,7 +16,6 @@ import { useNavigate } from "react-router-dom";
 function Game() {
   const [user] = useRecoilState(UserAtom);
 
-  console.log(user);
   const [socket, setSocket] = useState<null | WebSocket>(null);
   const [waiting, setWaiting] = useState(true);
   const [board, setBoard] = useState<null | Square[][]>(null);
