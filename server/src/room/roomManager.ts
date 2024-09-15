@@ -26,10 +26,23 @@ export class RoomManager implements RoomManagerType {
     const room = new Room(firstUser, secondUser, ++this.roomCount);
     this.userIdToRoom.set(firstUser.id, room);
     this.userIdToRoom.set(secondUser.id, room);
-    // console.log(firstUser.name);
-    // console.log(secondUser.name);
+    firstUser.socket.onclose = () => {
+      this.inMatchDisconnectHandler(firstUser, room, true);
+    };
+    secondUser.socket.onclose = () => {
+      this.inMatchDisconnectHandler(secondUser, room, false);
+    };
     room.sendBoardToWhite();
     room.sendBoardToBlack();
+  }
+
+  private inMatchDisconnectHandler(user: User, room: Room, color: boolean) {
+    if (color) {
+      room.disconnectHandlerToWhite();
+    } else {
+      room.disconnectHandlerToBlack();
+    }
+    this.removeFromMap(user.id);
   }
 
   public findUser(id: number, name: string, socket: WebSocket): User {
@@ -44,10 +57,31 @@ export class RoomManager implements RoomManagerType {
     return newUser;
   }
 
+  private removeFromMap(id: number) {
+    this.userIdToUserDetails.delete(id);
+  }
+
+  private onCloseRemoveFromWaiting(user: User) {
+    user.socket.onclose = () => {
+      this.removeFromMap(user.id);
+      this.waitingUsers = this.waitingUsers.filter(
+        (eachUser) => eachUser != user
+      );
+    };
+  }
+
   public handleUser(user: User) {
     if (this.userIdToRoom.has(user.id)) {
       const room = this.userIdToRoom.get(user.id);
       if (room?.status === GAME_STATUS.WAITING_FOR_DISCONNECTED) {
+        user.socket.close = () => {
+          this.removeFromMap(user.id);
+          if (room.players.black_id == user.id) {
+            room.disconnectHandlerToBlack();
+          } else if (room.players.white_id == user.id) {
+            room.disconnectHandlerToWhite();
+          }
+        };
         room.addUser(user);
       }
       return;
@@ -58,6 +92,7 @@ export class RoomManager implements RoomManagerType {
       user.socket.send(
         JSON.stringify({ status: SendingMessageType.WAITING_FOR_ROOM })
       );
+      this.onCloseRemoveFromWaiting(user);
       return;
     }
     const waitingRandomUser = this.waitingUsers.pop();

@@ -31,16 +31,6 @@ export class Room implements RoomType {
     this.turn = true;
     this.board = this.prepareBoard();
     this.status = GAME_STATUS.RUNNING;
-    this.addCloseListeners(user1, true);
-    this.addCloseListeners(user2, false);
-  }
-
-  private addCloseListeners(user: User, color: boolean) {
-    const socket = user.socket;
-    socket.onclose = () => {
-      this.isWaiting = true;
-      this.removePlayer(color);
-    };
   }
 
   private removePlayer(color: boolean) {
@@ -131,6 +121,8 @@ export class Room implements RoomType {
 
   public sendBoardToBlack() {
     if (this.players.Black) {
+      // console.log("sent to black");
+      // console.log(this.players.Black.socket.readyState);
       this.players.Black.socket.send(
         JSON.stringify(this.prepareBoardMessage(false))
       );
@@ -139,18 +131,34 @@ export class Room implements RoomType {
 
   public sendBoardToWhite() {
     if (this.players.White) {
+      // console.log("sent to white");
       this.players.White.socket.send(
         JSON.stringify(this.prepareBoardMessage(true))
       );
     }
   }
 
+  public disconnectHandlerToBlack() {
+    if (this.players.Black) {
+      this.players.Black = null;
+      this.status = GAME_STATUS.WAITING_FOR_DISCONNECTED;
+    }
+  }
+
+  public disconnectHandlerToWhite() {
+    if (this.players.White) {
+        this.players.White = null;
+        this.status = GAME_STATUS.WAITING_FOR_DISCONNECTED;
+    }
+  }
+
   public addUser(user: User) {
     if (this.players.black_id == user.id) {
       this.players.Black = user;
-    }
-    if (this.players.white_id == user.id) {
+      this.sendBoardToBlack();
+    } else if (this.players.white_id == user.id) {
       this.players.White = user;
+      this.sendBoardToWhite();
     }
   }
 
