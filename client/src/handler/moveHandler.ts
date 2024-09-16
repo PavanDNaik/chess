@@ -20,6 +20,7 @@ export class MoveHandler {
       from,
       to,
     };
+    socket.send(JSON.stringify(msg));
     return true;
   }
 }

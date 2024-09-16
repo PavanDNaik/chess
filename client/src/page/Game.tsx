@@ -49,10 +49,9 @@ function Game() {
   function handleMessage(e: { data: string }) {
     const msgString: string = e.data;
     const msg: RecievedMessage = JSON.parse(msgString);
-    console.log(msg.status == RecievedMessageType.FOUND_ROOM);
     switch (msg.status) {
       case RecievedMessageType.FOUND_ROOM: {
-        if (msg.PayLoad.color === false) {
+        if (msg.PayLoad.color === true) {
           setBoard(swap(msg.PayLoad.board));
         } else {
           setBoard(msg.PayLoad.board);
@@ -64,27 +63,37 @@ function Game() {
     }
   }
 
-  function handlePieceClick(to: Square) {
+  function makeMove(from: Square, to: Square) {
     if (!board) return;
-    if (
-      (to.pieceType == PIECE_TYPE.emptySquare && from == null) ||
-      color == null
-    )
+    to.pieceType = from.pieceType;
+    from.pieceType = PIECE_TYPE.emptySquare;
+    setBoard([...board]);
+  }
+
+  function handlePieceClick(to: Square) {
+    if (!board || color == null) return;
+    if (from == null) {
+      if (validate.isSameColor(color, to)) {
+        setfrom(from);
+        // highlight
+      }
       return;
-    if (to.color == color) {
-      setfrom(to);
-      return;
+    } else {
+      if (validate.isSameColor(color, to)) {
+        setfrom(null);
+        return; // cant take ur own piece
+      }
+      if (validate.validateMove(from, to, color, board)) {
+        moveHandler.handleMove(socket, from, to, roomId);
+        makeMove(from, to);
+      }
+      setfrom(null);
     }
-    if (
-      from &&
-      validate.validateMove(from, to) &&
-      moveHandler.handleMove(socket, from, to, roomId)
-    ) {
-      board[to.x][to.y].pieceType = from.pieceType;
-      board[from.x][from.y].pieceType = PIECE_TYPE.emptySquare;
-      setBoard([...board]);
-    }
-    setfrom(null);
+  }
+
+  function classOnClicked(x: number, y: number) {
+    if (from == null) return "";
+    return " from-piece-highlight";
   }
 
   useEffect(() => {
@@ -123,10 +132,10 @@ function Game() {
       <div>room ID : {roomId}</div>
       <div className="board-container">
         {board &&
-          board.map((row: Square[], i) => {
+          board.map((row: Square[], i: number) => {
             return (
               <div className="board-row" key={i}>
-                {row.map((cell: Square, j) => {
+                {row.map((cell: Square, j: number) => {
                   return (
                     <div
                       key={i * 8 + j}
@@ -138,7 +147,8 @@ function Game() {
                         (cell.color ? "WhiteSquare " : "BlackSquare ") +
                         (cell.pieceType != PIECE_TYPE.emptySquare
                           ? "piece-cell"
-                          : "")
+                          : "") +
+                        classOnClicked(i, j)
                       }
                     >
                       {cell.pieceType != PIECE_TYPE.emptySquare && (
