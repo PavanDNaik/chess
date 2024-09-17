@@ -28,8 +28,8 @@ export enum SendingMessageType {
 export type RecievedMessage = {
   status: RecievedMessageType;
   RoomID: number | "WAITING";
-  from?: Position;
-  to?: Position;
+  from?: Square;
+  to?: Square;
   PayLoad?: any;
 };
 
@@ -40,9 +40,10 @@ export type SendingMessage = {
   from?: Square;
   to?: Square;
   PayLoad?: any;
+  color?: boolean;
 };
 
 export type Position = {
-  x: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
-  y: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+  x: number;
+  y: number;
 };

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import {
   RecievedMessage,
   RecievedMessageType,
@@ -9,52 +9,86 @@ import { PIECE_TYPE, Square } from "../store/board";
 import "../css/board.css";
 import { Validator } from "../handler/validator";
 import { MoveHandler } from "../handler/moveHandler";
-import { useRecoilState } from "recoil";
+import { useRecoilState, useRecoilValue } from "recoil";
 import { UserAtom } from "../recoil/atoms/user";
 import { useNavigate } from "react-router-dom";
 import { socketAtom } from "../recoil/atoms/socket";
+import { boardAtom } from "../recoil/atoms/board";
+import { gameInfoAtom } from "../recoil/atoms/gameStatus";
+import Board from "../component/Board";
 
 function Game() {
-  const [user] = useRecoilState(UserAtom);
+  const navigate = useNavigate();
 
+  const user = useRecoilValue(UserAtom);
   const [socket, setSocket] = useRecoilState(socketAtom);
+  const [board, setBoard] = useRecoilState(boardAtom);
+  const [gameInfo, setGameInfo] = useRecoilState(gameInfoAtom);
 
-  const [waiting, setWaiting] = useState(true);
-  const [board, setBoard] = useState<null | Square[][]>(null);
-  const [roomId, setRoomId] = useState<number | "WAITING">("WAITING");
-  const [color, setColor] = useState<boolean | null>(null);
-  const [from, setfrom] = useState<null | Square>(null);
-  const validate = new Validator();
-  const moveHandler = new MoveHandler(user?.id || 0);
+  const validate = useMemo(() => {
+    return new Validator();
+  }, []);
 
-  function connectToSocket() {
+  const moveHandler = useMemo(() => {
+    return new MoveHandler(user?.id || 0);
+  }, [user]);
+
+  const connectToSocket = () => {
     const connection = new WebSocket("ws://localhost:5000");
     connection.onopen = () => {
+      if (socket) {
+        socket.close();
+      }
       setSocket(connection);
     };
     connection.onmessage = handleMessage;
+    connection.onerror = (e) => {
+      console.log(e);
+    };
     return connection;
-  }
+  };
 
-  function swapCells(row1: Square[], row2: Square[]) {
+  const swapCells = useCallback((row1: Square[], row2: Square[]) => {
     for (let i = 0; i < 8; i++) {
       let tType: PIECE_TYPE = row1[i].pieceType;
       row1[i].pieceType = row2[i].pieceType;
       row2[i].pieceType = tType;
+      row1[i].color = !row1[i].color;
+      row2[i].color = !row2[i].color;
     }
-  }
+  }, []);
 
-  function swap(board: Square[][]) {
+  const swap = useCallback((board: Square[][]) => {
     for (let i = 0; i < 4; i++) {
       swapCells(board[i], board[7 - i]);
     }
-    console.log(board);
     return board;
+  }, []);
+
+  const getCopy = useCallback((board: Square[][])=> {
+    let b: Square[][] = [];
+    for (let i = 0; i < 8; i++) {
+      let row: Square[] = [];
+      for (let j = 0; j < 8; j++) {
+        let obj: Square = { ...board[i][j] };
+        row.push(obj);
+      }
+      b.push(row);
+    }
+    return b;
+  },[]);
+
+  function makeMove(from: Square, to: Square) {
+    if (!board) return;
+    let b: Square[][] = getCopy(board);
+    b[to.x][to.y].pieceType = b[from.x][from.y].pieceType;
+    b[from.x][from.y].pieceType = PIECE_TYPE.emptySquare;
+    setBoard(b);
   }
 
-  function handleMessage(e: { data: string }) {
-    const msgString: string = e.data;
-    const msg: RecievedMessage = JSON.parse(msgString);
+  const handleMessage = (e: { data: string }) => {
+    let msgString: string = e.data;
+    let msg: RecievedMessage = JSON.parse(msgString);
     switch (msg.status) {
       case RecievedMessageType.FOUND_ROOM: {
         if (msg.PayLoad.color === true) {
@@ -62,74 +96,48 @@ function Game() {
         } else {
           setBoard(msg.PayLoad.board);
         }
-        setRoomId(msg.RoomID);
-        setColor(msg.PayLoad.color);
-        setWaiting(false);
+        setGameInfo({
+          ...gameInfo,
+          roomId: msg.RoomID,
+          color: msg.PayLoad.color,
+          waitingForRoom: false,
+        });
+        break;
+      }
+      case RecievedMessageType.OPPONENTS_MOVE: {
+        let from = msg.from;
+        let to = msg.to;
+        console.log("ENTER");
+        if (from && to) {
+          from.x = 7 - from.x;
+          to.x = 7 - to.x;
+          console.log(from);
+          console.log(to);
+          makeMove(from, to);
+        }
+        break;
       }
     }
-  }
-
-  function makeMove(from: Square, to: Square) {
-    if (!board) return;
-    to.pieceType = from.pieceType;
-    from.pieceType = PIECE_TYPE.emptySquare;
-    setBoard([...board]);
-  }
-
-  function handlePieceClick(to: Square) {
-    if (!board || color == null) return;
-    if (from == null) {
-      if (validate.isSameColor(color, to)) {
-        setfrom(to);
-        // highlight
-      }
-      return;
-    } else {
-      if (validate.isSameColor(color, to)) {
-        setfrom(to);
-        return; // cant take ur own piece
-      }
-      if (validate.validateMove(from, to, color, board)) {
-        moveHandler.handleMove(socket, from, to, roomId);
-        makeMove(from, to);
-      }
-      setfrom(null);
-    }
-  }
-
-  function classOnClicked(x: number, y: number) {
-    if (from == null || from.x != x || from.y != y) return "";
-    return " from-piece-highlight";
-  }
-
+  };
+  console.log(board);
   useEffect(() => {
     if (!user) {
-      const navigate = useNavigate();
       navigate("/login");
     }
     let connection = connectToSocket();
+
     connection.onclose = () => {
-      const timer = setInterval(() => {
-        if (socket) {
-          clearInterval(timer);
-        } else {
-          connection = connectToSocket();
-        }
-      }, 5000);
+      setSocket(null);
     };
     return () => {
       connection.close();
+      console.log("closed by cleanup");
       setSocket(null);
     };
   }, []);
 
   useEffect(() => {
     if (socket) {
-      socket.onclose = (e) => {
-        console.log(e);
-        setSocket(null);
-      };
-
       const msg: SendingMessage = {
         Type: SendingMessageType.NEW_GAME,
         RoomID: "WAITING",
@@ -146,46 +154,17 @@ function Game() {
         <div>connecting to server...</div>
       ) : (
         <div>
-          {waiting ? (
+          {gameInfo.waitingForRoom || gameInfo.color == null ? (
             <div>Looking for opponent..</div>
           ) : (
             <div>
               opponent found
-              <div>room ID : {roomId}</div>
-              <div className="board-container">
-                {board &&
-                  board.map((row: Square[], i: number) => {
-                    return (
-                      <div className="board-row" key={i}>
-                        {row.map((cell: Square, j: number) => {
-                          return (
-                            <div
-                              key={i * 8 + j}
-                              onClick={() => {
-                                handlePieceClick(cell);
-                              }}
-                              className={
-                                "Square " +
-                                (cell.color ? "WhiteSquare " : "BlackSquare ") +
-                                (cell.pieceType != PIECE_TYPE.emptySquare
-                                  ? "piece-cell"
-                                  : "") +
-                                classOnClicked(i, j)
-                              }
-                            >
-                              {cell.pieceType != PIECE_TYPE.emptySquare && (
-                                <img
-                                  className="piece-img"
-                                  src={"./pieces/" + cell.pieceType + ".png"}
-                                />
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
-              </div>
+              <div>room ID : {gameInfo.roomId}</div>
+              <Board
+                color={gameInfo.color}
+                validate={validate}
+                moveHandler={moveHandler}
+              />
             </div>
           )}
         </div>

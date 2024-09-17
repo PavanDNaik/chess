@@ -114,11 +114,17 @@ export class RoomManager implements RoomManagerType {
   public handleMove(color: boolean, id: number, from: Position, to: Position) {
     const room = this.userIdToRoom.get(id);
     if (!room || room.status === GAME_STATUS.ENDED) return false;
-    if (room.turn !== color) return false;
+    // if (room.turn !== color) return false;
     if (this.validate(from, to)) {
-      room.board[to.x][to.x].pieceType = room.board[from.x][from.y].pieceType;
-      room.board[from.x][from.y].pieceType = PIECE_TYPE.emptySquare;
       if (color) {
+        room.board[7 - to.x][to.y].pieceType =
+          room.board[7 - from.x][from.y].pieceType;
+        room.board[7 - from.x][from.y].pieceType = PIECE_TYPE.emptySquare;
+      } else {
+        room.board[to.x][to.y].pieceType = room.board[from.x][from.y].pieceType;
+        room.board[from.x][from.y].pieceType = PIECE_TYPE.emptySquare;
+      }
+      if (color == false) {
         room.players.White?.socket.send(
           JSON.stringify({
             status: SendingMessageType.OPPONENTS_MOVE,

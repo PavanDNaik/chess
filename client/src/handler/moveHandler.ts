@@ -10,7 +10,8 @@ export class MoveHandler {
     socket: WebSocket | null,
     from: Square,
     to: Square,
-    roomId: number | "WAITING"
+    roomId: number | "WAITING",
+    color: boolean
   ) {
     if (socket == null || roomId == "WAITING") return false;
     const msg: SendingMessage = {
@@ -19,8 +20,14 @@ export class MoveHandler {
       RoomID: roomId,
       from,
       to,
+      color,
     };
     socket.send(JSON.stringify(msg));
     return true;
   }
+
+  // public makeMove(from: Square, to: Square) {
+  //   to.pieceType = from.pieceType;
+  //   from.pieceType = PIECE_TYPE.emptySquare;
+  // }
 }
