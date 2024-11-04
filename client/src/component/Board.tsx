@@ -2,8 +2,7 @@ import { useState } from "react";
 import { PIECE_TYPE, Square } from "../store/board";
 import { Validator } from "../handler/validator";
 import { MoveHandler } from "../handler/moveHandler";
-import { useRecoilState, useRecoilValue } from "recoil";
-import { boardAtom } from "../recoil/atoms/board";
+import { useRecoilValue } from "recoil";
 import { socketAtom } from "../recoil/atoms/socket";
 import { gameInfoAtom } from "../recoil/atoms/gameStatus";
 
@@ -11,34 +10,20 @@ type BoardPropType = {
   color: boolean;
   validate: Validator;
   moveHandler: MoveHandler;
+  board: Square[][];
+  makeMove: any;
 };
-function Board({ color, validate, moveHandler }: BoardPropType) {
+function Board({
+  color,
+  validate,
+  moveHandler,
+  board,
+  makeMove,
+}: BoardPropType) {
   const [from, setfrom] = useState<null | Square>(null);
-  const [board, setBoard] = useRecoilState(boardAtom);
+  // const [] = useRecoilState(boardAtom);
   const socket = useRecoilValue(socketAtom);
   const gameInfo = useRecoilValue(gameInfoAtom);
-  console.log(board);
-
-  function getCopy(board: Square[][]) {
-    let b: Square[][] = [];
-    for (let i = 0; i < 8; i++) {
-      let row: Square[] = [];
-      for (let j = 0; j < 8; j++) {
-        let obj: Square = { ...board[i][j] };
-        row.push(obj);
-      }
-      b.push(row);
-    }
-    return b;
-  }
-
-  function makeMove(from: Square, to: Square) {
-    if (!board) return;
-    let b: Square[][] = getCopy(board);
-    b[to.x][to.y].pieceType = b[from.x][from.y].pieceType;
-    b[from.x][from.y].pieceType = PIECE_TYPE.emptySquare;
-    setBoard(b);
-  }
 
   function handlePieceClick(to: Square) {
     if (!board || color == null) return;
@@ -66,7 +51,7 @@ function Board({ color, validate, moveHandler }: BoardPropType) {
     return " from-piece-highlight";
   }
   return (
-    <div className="board-container">
+    <div className={`board-container ${color && "rotated"}`}>
       {board &&
         board.map((row: Square[], i: number) => {
           return (
@@ -90,7 +75,7 @@ function Board({ color, validate, moveHandler }: BoardPropType) {
                     {i + " " + j}
                     {cell.pieceType != PIECE_TYPE.emptySquare && (
                       <img
-                        className="piece-img"
+                        className={`piece-img ${color && "rotated"}`}
                         src={"./pieces/" + cell.pieceType + ".png"}
                       />
                     )}

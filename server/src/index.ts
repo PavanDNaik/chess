@@ -1,5 +1,5 @@
 import express from "express";
-import { WebSocketServer } from "ws";
+import { Server } from "ws";
 import { RoomManager } from "./room/roomManager";
 import { User } from "./user/user";
 import { RecievedMessageType, SendingMessageType } from "./store/types";
@@ -19,7 +19,7 @@ const server = app.listen(PORT, () => {
   console.log(`Listening on PORT : ${PORT}`);
 });
 
-const WSS = new WebSocketServer({ server });
+const WSS = new Server({ server });
 
 const roomManager = new RoomManager();
 

@@ -14,6 +14,8 @@ export class MoveHandler {
     color: boolean
   ) {
     if (socket == null || roomId == "WAITING") return false;
+    console.log(from.x + " " + from.y);
+    console.log(to.x + " " + to.y);
     const msg: SendingMessage = {
       Type: SendingMessageType.NEXT_MOVE,
       id: this.id,

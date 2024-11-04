@@ -27,12 +27,17 @@ padding: 0;
 }
 
 .piece-img{
-    width: 75px;
-    height: 75px;
+    width: 100%;
+    height: 100%;
     /* opacity: 0.5; */
     background: transparent;
 }
 
 .from-piece-highlight {
     background-color: rgb(209, 209, 100);
+}
+
+.rotated {
+  transform: rotate(180deg); /* Equal to rotateZ(45deg) */
+  /* background-color: pink; */
 }

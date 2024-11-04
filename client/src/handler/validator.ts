@@ -98,19 +98,24 @@ export class Validator {
     return false;
   }
 
-  private isValidPawnMove(from: Square, to: Square, board: Square[][]) {
+  private isValidPawnMove(
+    from: Square,
+    to: Square,
+    board: Square[][],
+    factor: 1 | -1
+  ) {
     if (to.pieceType == PIECE_TYPE.emptySquare) {
       if (
         from.y == to.y &&
-        (from.x - to.x == 1 ||
-          (from.x == 6 &&
-            from.x - to.x == 2 &&
+        (from.x - to.x == 1 * factor ||
+          (from.x == (factor == -1 ? 1 : 6) &&
+            from.x - to.x == 2 * factor &&
             board[from.x - 1][from.y].pieceType == PIECE_TYPE.emptySquare))
       ) {
         return true;
       }
     } else {
-      if (Math.abs(from.y - to.y) == 1 && to.x - from.x == 1) {
+      if (Math.abs(from.y - to.y) == 1 && to.x - from.x == 1 * factor) {
         return true;
       }
     }
@@ -135,7 +140,7 @@ export class Validator {
           return this.isValidQueenMove(from, to, board);
         }
         case PIECE_TYPE.wPawn: {
-          return this.isValidPawnMove(from, to, board);
+          return this.isValidPawnMove(from, to, board, -1);
         }
         case PIECE_TYPE.wKing: {
           return this.isValidKingMove(from, to, board);
@@ -164,7 +169,7 @@ export class Validator {
           return this.isValidQueenMove(from, to, board);
         }
         case PIECE_TYPE.bPawn: {
-          return this.isValidPawnMove(from, to, board);
+          return this.isValidPawnMove(from, to, board, 1);
         }
         case PIECE_TYPE.bKing: {
           if (this.isValidKingMove(from, to, board)) {

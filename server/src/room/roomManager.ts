@@ -116,14 +116,8 @@ export class RoomManager implements RoomManagerType {
     if (!room || room.status === GAME_STATUS.ENDED) return false;
     // if (room.turn !== color) return false;
     if (this.validate(from, to)) {
-      if (color) {
-        room.board[7 - to.x][to.y].pieceType =
-          room.board[7 - from.x][from.y].pieceType;
-        room.board[7 - from.x][from.y].pieceType = PIECE_TYPE.emptySquare;
-      } else {
-        room.board[to.x][to.y].pieceType = room.board[from.x][from.y].pieceType;
-        room.board[from.x][from.y].pieceType = PIECE_TYPE.emptySquare;
-      }
+      room.board[to.x][to.y].pieceType = room.board[from.x][from.y].pieceType;
+      room.board[from.x][from.y].pieceType = PIECE_TYPE.emptySquare;
       if (color == false) {
         room.players.White?.socket.send(
           JSON.stringify({
