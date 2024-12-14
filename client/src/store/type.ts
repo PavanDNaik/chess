@@ -47,3 +47,10 @@ export type Position = {
   x: number;
   y: number;
 };
+
+export enum PAWN_MOVES {
+  ONE_STEP_STRAIGHT = 1000,
+  TWO_STEP_STRAIGHT,
+  DIAGONAL_CAPTURE,
+  EN_PASSANT,
+}
